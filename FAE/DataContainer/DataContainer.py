@@ -3,12 +3,16 @@ Jun 17, 2018.
 Yang SONG, songyangmri@gmail.com
 '''
 
-import numpy as np
 import os
-import pandas as pd
-
 import copy
 import math
+from copy import deepcopy
+
+import numpy as np
+import pandas as pd
+
+from Utility.EcLog import eclog
+
 
 def LoadCSVwithChineseInPandas(file_path, **kwargs):
     if 'encoding' not in kwargs.keys():
@@ -26,11 +30,20 @@ class DataContainer:
         self.__case_name = case_name
         self.__label = label
         self._array = array
+        self.logger = eclog(os.path.split(__file__)[-1]).GetLogger()
 
         if array.size != 0 and label.size != 0:
             self.UpdateFrameByData()
         else:
             self.__df = None
+
+    def __deepcopy__(self, memodict={}):
+        copy_data_container = type(self)(deepcopy(self.GetArray()),
+                                         deepcopy(self.GetLabel()),
+                                         deepcopy(self.GetFeatureName()),
+                                         deepcopy(self.GetCaseName()))
+        return copy_data_container
+
 
     def __IsNumber(self, input_data):
         try:
@@ -94,16 +107,18 @@ class DataContainer:
         try:
             self.__df = pd.read_csv(file_path, header=0)
             self.UpdateDataByFrame()
-        except:
-            print('Check the CSV file path: LoadWithoutCase')
+        except Exception as e:
+            # self.logger.error('LoadWitoutCase:  ' + str(e))
+            print('Check the CSV file path: LoadWithoutCase: \n{}'.format(e.__str__()))
 
 
     def LoadwithNonNumeric(self, file_path):
         self.__init__()
         try:
             self.__df = pd.read_csv(file_path, header=0, index_col=0)
-        except:
-            print('Check the CSV file path: LoadwithNonNumeric')
+        except Exception as e:
+            # self.logger.error('LoadWithNonNumeirc:  ' + str(e))
+            print('Check the CSV file path: LoadWithNonNumeirc: \n{}'.format(e.__str__()))
 
 
     def Load(self, file_path):
@@ -112,14 +127,16 @@ class DataContainer:
             self.__df = pd.read_csv(file_path, header=0, index_col=0)
             self.UpdateDataByFrame()
             return
-        except:
-            print('Check the CSV file path: Load')
+        except Exception as e:
+            # self.logger.error('Load:  ' + str(e))
+            print('Check the CSV file path: {}: \n{}'.format(file_path, e.__str__()))
 
         try:
             self.__df = LoadCSVwithChineseInPandas(file_path, header=0, index_col=0)
             self.UpdateDataByFrame()
-        except:
-            print('Check the CSV file including Chinese!')
+        except Exception as e:
+            # self.logger.error('Load Chinese CSV:  ' + str(e))
+            print('Check the CSV file path: {}: \n{}'.format(file_path, e.__str__()))
 
     def ShowInformation(self):
         print('The number of cases is ', str(len(self.__case_name)))
@@ -181,6 +198,9 @@ class DataContainer:
             vector = self._array[index, :]
             if np.where(np.isnan(vector))[0].size > 0:
                 removed_index.append(index)
+                continue
+            if self.__label[index] != 0 and self.__label[index] != 1:
+                removed_index.append(index)
 
         # Remove the case name
         removed_case_name = [self.__case_name[index] for index in removed_index]
@@ -201,7 +221,7 @@ class DataContainer:
         return self._array, self.__label, self.__feature_name, self.__case_name
 
     def GetFrame(self): return self.__df
-    def GetArray(self): return self._array
+    def GetArray(self): return self._array.astype(np.float64)
     def GetLabel(self): return self.__label
     def GetFeatureName(self): return self.__feature_name
     def GetCaseName(self): return self.__case_name
@@ -224,21 +244,11 @@ class DataContainer:
 
 
 def main():
-    # test FeatureReader
-    # feature_reader = DataContainer()
-    # array, label, feature_name, case_name = feature_reader.LoadAndGetData(r'..\Result\numeric_feature.csv')
-    # print(array.shape)
-    # print(label.shape)
-    # print(len(feature_name))
-    # print(len(case_name))
-    # feature_reader.SaveData(r'..\Result\NewNumericFeature.csv')
-
-    # Test Normalization
+    import copy
     data = DataContainer()
-    data.Load(r'..\..\Example\numeric_feature.csv')
-    data.ShowInformation()
-    data.UsualNormalize(r'..\Example\normalization.csv')
-    data.ArtefactNormalize(r'..\Example\normalization.csv')
+    data.Load(r'C:\Users\yangs\Desktop\fae_test\data_noncontrast_original.csv')
+    new_data = copy.deepcopy(data)
+    new_data.ShowInformation()
 
 if __name__ == '__main__':
     main()
