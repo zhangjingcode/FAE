@@ -9,7 +9,7 @@ import csv
 
 from sklearn.feature_selection import SelectKBest, f_classif, RFE
 from sklearn.decomposition import PCA
-import pymrmr
+# import pymrmr
 from sklearn.svm import SVC
 
 from FAE.FeatureAnalysis.ReliefF import ReliefF

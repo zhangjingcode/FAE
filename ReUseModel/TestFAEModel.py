@@ -95,10 +95,24 @@ def TestNewData(NewDataCsv, model_folder, result_save_path=''):
     info.update(metric)
     cv = CrossValidation()
 
+
+
     print(metric)
     print('\t')
 
     if result_save_path:
+
+        info.update(metric)
+        np.save(os.path.join(store_folder, 'test_predict.npy'), test_pred)
+        np.save(os.path.join(store_folder, 'test_label.npy'), test_label)
+
+        test_result_info = [['CaseName', 'Pred', 'Label']]
+        for index in range(len(test_label)):
+            test_result_info.append([test_case_name[index], test_pred[index], test_label[index]])
+        with open(os.path.join(store_folder, 'test_info.csv'), 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerows(test_result_info)
+
         cv.SaveResult(info, result_save_path)
         np.save(os.path.join(result_save_path, 'test_predict.npy'), predict)
         np.save(os.path.join(result_save_path, 'test_label.npy'), label)

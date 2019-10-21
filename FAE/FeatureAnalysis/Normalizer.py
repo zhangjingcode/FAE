@@ -10,12 +10,26 @@ class Normalizer:
         self._interception = np.array([])
 
     def Transform(self, data_container):
+        new_data_container = deepcopy(data_container)
         array = data_container.GetArray()
+
+        invariability_position = np.where(self._slop == 0)
+        if invariability_position :
+            array = np.delete(array, invariability_position, axis=1)
+            self._slop = np.delete(self._slop, invariability_position, axis=0)
+            self._interception = np.delete(self._interception, invariability_position, axis=0)
+
+            feature_name_list = data_container.GetFeatureName()
+
+            invariability_feature_name = [feature_name_list[index] for index in
+                                      [index for index in invariability_position[0]]]
+
+            feature_name_list = [index for index in feature_name_list if index not in invariability_feature_name]
+            new_data_container.SetFeatureName(feature_name_list)
+
         array -= self._interception
         array /= self._slop
         array = np.nan_to_num(array)
-
-        new_data_container = deepcopy(data_container)
         new_data_container.SetArray(array)
         new_data_container.UpdateFrameByData()
         return new_data_container
